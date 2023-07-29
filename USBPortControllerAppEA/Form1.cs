@@ -10,12 +10,16 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.ProgressBar;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+
 
 namespace USBPortControllerAppEA
 {
     
     public partial class Form1 : Form
     {
+        private bool allowHIDDevices = false; // HID aygıtlarına izin vermek için kullanılacak flag
         private Timer notificationTimer;
         private bool isNotifying = false;
         public Form1()
@@ -78,6 +82,11 @@ namespace USBPortControllerAppEA
         private void button2_Click(object sender, EventArgs e)
         {
             EnableUSBPorts(); // Enable method for USB Ports;
+        }
+        private void button3_Click(object sender, EventArgs e)
+        {
+            DisableUSBPorts();
+            AllowHIDDevices(); // Toggle AllowHIDDevices flag on button click
         }
         private void DisableUSBPorts()
         {
@@ -161,10 +170,46 @@ namespace USBPortControllerAppEA
                 label1.Text = "Something went wrong: " + ex.Message;
             }
         }
+        private void AllowHIDDevices()
+        {
+            try
+            {
+                // Change devcon location
+                string devconPath = @"C:\Program Files (x86)\Windows Kits\10\Tools\10.0.22621.0\arm64\devcon.exe"; // Devcon.exe'nin yolunu ayarlayın
+
+                Process process = new Process();
+                ProcessStartInfo startInfo = new ProcessStartInfo();
+                startInfo.WindowStyle = ProcessWindowStyle.Hidden;
+                startInfo.FileName = devconPath;
+
+                // Change device location
+                startInfo.Arguments = "HID\\VID_03F0&PID_3A41&MI_00\\7&2D82FB87&0&0000\r\n";
+
+                process.StartInfo = startInfo;
+                process.Start();
+                process.WaitForExit();
+                int exitCode = process.ExitCode;
+
+                if (exitCode == 0)
+                {
+                    label1.Text = "Only HID devices (e.g., keyboard, mouse) are allowed.";
+                }
+                else
+                {
+                    label1.Text = "Failed to enable HID devices. Exit Code: " + exitCode;
+                }
+            }
+            catch (Exception ex)
+            {
+                label1.Text = "Something went wrong: " + ex.Message;
+            }
+        }
 
         private void Form1_Load(object sender, System.EventArgs e)
         {
             
         }
+
+       
     }
 }
